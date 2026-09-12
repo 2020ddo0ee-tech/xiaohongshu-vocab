@@ -356,10 +356,15 @@
       </div>
 
       <div id="modePaste">
-        <textarea id="inputPaste" placeholder="뒤로 탭 단축어 결과(콘텐츠 보기 화면)를 길게 눌러 전체 복사한 다음 여기에 붙여넣으세요"></textarea>
+        <div style="text-align:center;padding:28px 20px;color:var(--ink-soft);">
+          <div style="font-size:26px;margin-bottom:10px;font-family:'Noto Serif SC',serif;color:var(--ink-faint);">红</div>
+          <p style="font-size:13.5px;line-height:1.6;margin:0;">샤오홍슈에서 <b>뒤로 탭 두 번</b>하면<br>단어가 자동으로 여기 저장돼요.</p>
+          <button class="ghost-btn" id="togglePasteBox" style="margin-top:16px;">직접 붙여넣기</button>
+        </div>
+        <textarea id="inputPaste" style="display:none;" placeholder="단축어 결과를 붙여넣으세요"></textarea>
       </div>
 
-      <button class="primary-btn" id="analyzeBtn">단어 가져오기</button>
+      <button class="primary-btn" id="analyzeBtn" style="display:none;">단어 가져오기</button>
       <div id="analyzeError"></div>
       <div id="analyzeResult"></div>
     </section>
@@ -465,6 +470,12 @@ document.getElementById('modeImageBtn').addEventListener('click', ()=> switchMod
 document.getElementById('modeTextBtn').addEventListener('click', ()=> switchMode('text'));
 document.getElementById('modePasteBtn').addEventListener('click', ()=> switchMode('paste'));
 
+document.getElementById('togglePasteBox').addEventListener('click', ()=>{
+  document.getElementById('inputPaste').style.display = 'block';
+  document.getElementById('analyzeBtn').style.display = 'flex';
+  document.getElementById('togglePasteBox').style.display = 'none';
+});
+
 function switchMode(mode){
   analyzeMode = mode;
   document.getElementById('modeImageBtn').classList.toggle('active', mode==='image');
@@ -474,6 +485,8 @@ function switchMode(mode){
   document.getElementById('modeText').style.display = mode==='text' ? 'block' : 'none';
   document.getElementById('modePaste').style.display = mode==='paste' ? 'block' : 'none';
   document.getElementById('modeHostNote').style.display = (mode==='image' || mode==='text') ? 'block' : 'none';
+  const pasteBoxOpen = document.getElementById('inputPaste').style.display === 'block';
+  document.getElementById('analyzeBtn').style.display = (mode==='paste' && !pasteBoxOpen) ? 'none' : 'flex';
   document.getElementById('analyzeBtn').textContent = mode==='paste' ? '단어 가져오기' : '문장 분석하기';
 }
 
@@ -843,7 +856,6 @@ function parseShortcutResult(raw){
     const hasCJK = /[\u4e00-\u9fff]/.test(hanzi);
     const pinyinHasCJKorHangul = /[\u4e00-\u9fff\uac00-\ud7a3]/.test(pinyin);
     if(!hasCJK || pinyinHasCJKorHangul || !pinyin || !meaning) continue;
-    if(hanzi.length > 12) continue;
     if(seen.has(hanzi)) continue;
     seen.add(hanzi);
     words.push({ hanzi, pinyin, meaning, note: '' });
