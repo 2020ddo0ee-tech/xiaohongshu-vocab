@@ -160,7 +160,16 @@
   </header>
   <main>
     <section class="panel active" id="p-history">
-      <button class="clip-btn" id="clipBtn">📋 복사한 결과 가져오기</button>
+      <div id="importBox">
+        <button class="clip-btn" id="clipBtn">📋 복사한 결과 가져오기</button>
+        <div id="pasteWrap" style="display:none;">
+          <textarea id="pasteIn" placeholder="여기를 길게 눌러 → 붙여넣기"
+            style="width:100%;min-height:90px;border:1px solid var(--line);background:var(--white);
+            border-radius:2px;padding:12px;font-family:inherit;font-size:14px;line-height:1.5;
+            resize:vertical;"></textarea>
+          <button class="btn btn-primary" id="pasteGo" style="margin-top:8px;">저장하기</button>
+        </div>
+      </div>
       <div id="histArea"></div>
     </section>
     <section class="panel" id="p-vocab">
@@ -434,22 +443,41 @@ function importRaw(raw){
     added?` (새 단어 ${added}개)`:''}</div>`;
 }
 
+function showPasteBox(msg){
+  document.getElementById('clipBtn').style.display='none';
+  document.getElementById('pasteWrap').style.display='block';
+  document.getElementById('pasteIn').focus();
+  if(msg){ detailId=null; renderHist(`<div class="banner banner-err">${esc(msg)}</div>`); }
+}
+function resetImportBox(){
+  document.getElementById('clipBtn').style.display='block';
+  document.getElementById('pasteWrap').style.display='none';
+  document.getElementById('pasteIn').value='';
+}
+
 document.getElementById('clipBtn').addEventListener('click', async ()=>{
-  const btn=document.getElementById('clipBtn');
-  const old=btn.textContent;
   try{
+    if(!navigator.clipboard || !navigator.clipboard.readText) throw new Error('no api');
     const txt=await navigator.clipboard.readText();
     if(!txt || !txt.trim()){
-      detailId=null;
-      renderHist(`<div class="banner banner-err">클립보드가 비어 있어요. 샤오홍슈에서 뒤로 탭을 먼저 해주세요.</div>`);
+      showPasteBox('클립보드를 읽지 못했어요. 아래 칸에 길게 눌러 붙여넣어 주세요.');
       return;
     }
     detailId=null;
     renderHist(importRaw(txt.trim()));
   }catch(e){
-    btn.textContent='붙여넣기를 허용해주세요';
-    setTimeout(()=>{ btn.textContent=old; },1800);
+    showPasteBox('이 브라우저는 자동 읽기를 막아요. 아래 칸에 길게 눌러 붙여넣어 주세요.');
   }
+});
+
+document.getElementById('pasteGo').addEventListener('click', ()=>{
+  const t=document.getElementById('pasteIn').value.trim();
+  if(!t){ document.getElementById('pasteIn').focus(); return; }
+  detailId=null;
+  const b=importRaw(t);
+  resetImportBox();
+  renderHist(b);
+  window.scrollTo(0,0);
 });
 
 function autoImport(){
