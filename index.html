@@ -826,23 +826,31 @@ function parseShortcutResult(raw){
   for(const rawLine of lines){
     const line = rawLine.trim();
     if(!line || line.length < 2) continue;
-    const parts = line.split('/').map(p=>p.trim()).filter(p=>p.length>0);
+
+    // support both "한자|병음|뜻" and "한자 / 병음 / 뜻"
+    let parts;
+    if(line.includes('|')){
+      parts = line.split('|').map(p=>p.trim()).filter(p=>p.length>0);
+    }else{
+      parts = line.split('/').map(p=>p.trim()).filter(p=>p.length>0);
+    }
     if(parts.length < 3) continue;
 
     const hanzi = parts[0];
     const meaning = parts[parts.length-1];
-    const pinyin = parts.slice(1, parts.length-1).join(' / ');
+    const pinyin = parts.slice(1, parts.length-1).join(' ');
 
     const hasCJK = /[\u4e00-\u9fff]/.test(hanzi);
     const pinyinHasCJKorHangul = /[\u4e00-\u9fff\uac00-\ud7a3]/.test(pinyin);
     if(!hasCJK || pinyinHasCJKorHangul || !pinyin || !meaning) continue;
+    if(hanzi.length > 12) continue;
     if(seen.has(hanzi)) continue;
     seen.add(hanzi);
     words.push({ hanzi, pinyin, meaning, note: '' });
   }
 
   return {
-    sourceText: sourceText || (words.length ? '(단축어 결과에서 추출된 단어)' : raw.slice(0,150)),
+    sourceText: sourceText || (words.length ? `단어 ${words.length}개` : raw.slice(0,150)),
     translation,
     words
   };
@@ -895,8 +903,13 @@ function tryAutoImportFromUrl(){
   refreshBadges();
 
   const banner = document.createElement('div');
-  banner.style.cssText = 'margin-bottom:14px;padding:12px 14px;background:var(--sage-tint);border-left:3px solid var(--sage);font-size:13px;color:var(--sage);font-weight:600;';
-  banner.textContent = addedCount>0 ? `${addedCount}개 단어가 자동으로 저장됐어요.` : '새로 추가된 단어가 없어요 (이미 저장된 단어일 수 있어요).';
+  if(parsed.words.length === 0){
+    banner.style.cssText = 'margin-bottom:14px;padding:12px 14px;background:var(--red-tint);border-left:3px solid var(--red);font-size:12.5px;color:var(--red-deep);line-height:1.6;word-break:break-all;';
+    banner.textContent = '단어를 못 읽었어요. 받은 내용: ' + raw.slice(0,120);
+  }else{
+    banner.style.cssText = 'margin-bottom:14px;padding:12px 14px;background:var(--sage-tint);border-left:3px solid var(--sage);font-size:13px;color:var(--sage);font-weight:600;';
+    banner.textContent = addedCount>0 ? `${addedCount}개 단어가 저장됐어요.` : '이미 저장된 단어들이에요.';
+  }
   const panel = document.getElementById('panel-vocab');
   panel.insertBefore(banner, panel.firstChild);
 }
